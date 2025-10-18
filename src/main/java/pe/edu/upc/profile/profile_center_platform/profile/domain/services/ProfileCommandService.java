@@ -2,6 +2,7 @@ package pe.edu.upc.profile.profile_center_platform.profile.domain.services;
 
 import pe.edu.upc.profile.profile_center_platform.profile.domain.model.aggregates.Profile;
 import pe.edu.upc.profile.profile_center_platform.profile.domain.model.commands.CreateProfileCommand;
+import pe.edu.upc.profile.profile_center_platform.profile.domain.model.commands.DeleteProfileByProfileIdCommand;
 import pe.edu.upc.profile.profile_center_platform.profile.domain.model.commands.DeleteProfileCommand;
 import pe.edu.upc.profile.profile_center_platform.profile.domain.model.commands.UpdateProfileCommand;
 
@@ -13,4 +14,6 @@ public interface ProfileCommandService {
   void handle(DeleteProfileCommand command);
 
   Optional<Profile> handle(UpdateProfileCommand command);
+
+  void handle(DeleteProfileByProfileIdCommand command);
 }

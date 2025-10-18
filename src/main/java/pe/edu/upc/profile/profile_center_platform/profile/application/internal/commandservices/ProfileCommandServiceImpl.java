@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import pe.edu.upc.profile.profile_center_platform.profile.application.internal.outboundservices.ProfileMessagingService;
 import pe.edu.upc.profile.profile_center_platform.profile.domain.model.aggregates.Profile;
 import pe.edu.upc.profile.profile_center_platform.profile.domain.model.commands.CreateProfileCommand;
+import pe.edu.upc.profile.profile_center_platform.profile.domain.model.commands.DeleteProfileByProfileIdCommand;
 import pe.edu.upc.profile.profile_center_platform.profile.domain.model.commands.DeleteProfileCommand;
 import pe.edu.upc.profile.profile_center_platform.profile.domain.model.commands.UpdateProfileCommand;
 import pe.edu.upc.profile.profile_center_platform.profile.domain.model.valueobjects.EmailAddress;
@@ -41,12 +42,19 @@ public class ProfileCommandServiceImpl implements ProfileCommandService {
 
   @Override
   public void handle(DeleteProfileCommand command) {
-    if (!profileRepository.existsById(command.profileId())) {
+    var profile = profileRepository.findById(command.profileId());
+    if (profile.isEmpty()) {
       throw new IllegalArgumentException("The profile does not exist");
     }
 
+    Long profileIdToDelete = command.profileId(); // Obtener la ID
+
     try {
-      profileRepository.deleteById(command.profileId());
+      profileRepository.deleteById(profileIdToDelete); // Eliminar localmente
+
+      // 1. Notificación Asíncrona: Borrar el autor en el otro servicio
+      messagingService.sendProfileDeletedEvent(profileIdToDelete); // <-- PUNTO CLAVE
+
     } catch (Exception e) {
       throw new IllegalArgumentException("Error while deleting profile: " + e.getMessage());
     }
@@ -89,6 +97,29 @@ public class ProfileCommandServiceImpl implements ProfileCommandService {
       return Optional.of(resultProfile);
     } catch (Exception e) {
       throw new IllegalArgumentException("Error while updating profile: " + e.getMessage());
+    }
+  }
+
+  @Override
+  public void handle(DeleteProfileByProfileIdCommand command) {
+    // 1. Buscar el Profile por su ID
+    var profileOptional = profileRepository.findById(command.profileId());
+    if (profileOptional.isEmpty()) {
+      // En EDA, si el Perfil ya fue borrado o no existe, ignoramos.
+      System.out.println("LOG: Profile not found for ID " + command.profileId() + ". Deletion event ignored.");
+      return;
+    }
+    var profileToDelete = profileOptional.get();
+
+    try {
+      // 2. Eliminar el perfil localmente
+      profileRepository.delete(profileToDelete);
+
+      // NOTA: No enviamos un evento aquí. El flujo Profile -> Author debe ser iniciado
+      // por el comando DeleteProfileCommand que recibe de la API, no por este.
+
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Error while deleting profile by command: " + e.getMessage());
     }
   }
 }
