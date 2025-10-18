@@ -1,0 +1,13 @@
+server:
+  port: 8081  # Puerto donde corre este servicio
+
+spring:
+  application:
+    name: profiles-service  # 👈 Nombre con el que se registrará en Eureka
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
