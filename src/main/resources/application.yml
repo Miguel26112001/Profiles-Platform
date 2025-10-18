@@ -4,6 +4,11 @@ server:
 spring:
   application:
     name: profiles-service  # 👈 Nombre con el que se registrará en Eureka
+  rabbitmq:
+    host: localhost   # O la IP/nombre del contenedor Docker (si es diferente)
+    port: 5672
+    username: guest
+    password: guest
 
 eureka:
   client:
